@@ -65,6 +65,12 @@ export default function DashboardPage() {
 
       <button onClick={handleLogout}>Çıkış Yap</button>
 
+      {currentUserProfile?.role === "admin" && (
+        <button type="button" onClick={() => navigate("/users")} style={{ marginLeft: "12px" }}>
+          Kullanıcı Yönetimi
+        </button>
+      )}
+
       <hr />
 
       <h2>Firma Seçiniz</h2>
