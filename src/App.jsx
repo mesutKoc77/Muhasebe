@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import CompanyPage from "./pages/CompanyPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -16,6 +17,15 @@ function App() {
           element={
             <PrivateRoute>
               <DashboardPage />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/company/:storeId"
+          element={
+            <PrivateRoute>
+              <CompanyPage />
             </PrivateRoute>
           }
         />

@@ -86,7 +86,7 @@ export default function DashboardPage() {
         <ul style={{ listStyle: "none", padding: 0 }}>
           {stores.map((store) => (
             <li key={store.id} style={{ marginBottom: "12px" }}>
-              <button type="button">
+              <button type="button" onClick={() => navigate(`/company/${store.id}`)}>
                 {store.name || store.title || store.companyName || store.id}
               </button>
             </li>
