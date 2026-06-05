@@ -1,11 +1,15 @@
 import { Navigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { useAuth } from "../contexts/authContext";
 
 export default function PrivateRoute({ children }) {
-  const user = auth.currentUser;
+  const { currentUser, loading } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/" />;
+  if (loading) {
+    return <p style={{ padding: "30px" }}>Oturum kontrol ediliyor...</p>;
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
   }
 
   return children;

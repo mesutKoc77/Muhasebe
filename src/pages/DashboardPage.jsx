@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
+import { useAuth } from "../contexts/authContext";
 import { getStoresForUser } from "../services/storeService";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState(null);
+  const { currentUser, currentUserProfile, profileLoading } = useAuth();
   const [stores, setStores] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -19,31 +19,26 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (profileLoading) {
+        setIsLoading(true);
+        return;
+      }
+
       setIsLoading(true);
       setError("");
 
       try {
-        const currentUser = auth.currentUser;
-
         if (!currentUser) {
           navigate("/");
           return;
         }
 
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
-
-        if (!userSnap.exists()) {
-          setError("Kullanıcı bilgileri bulunamadı.");
-          setUserData(null);
+        if (!currentUserProfile) {
           setStores([]);
           return;
         }
 
-        const currentUserData = userSnap.data();
-        const userStores = await getStoresForUser(currentUserData);
-
-        setUserData(currentUserData);
+        const userStores = await getStoresForUser(currentUserProfile);
         setStores(userStores);
       } catch {
         setError("Dashboard verileri yüklenirken bir hata oluştu.");
@@ -54,17 +49,17 @@ export default function DashboardPage() {
     };
 
     fetchDashboardData();
-  }, [navigate]);
+  }, [currentUser, currentUserProfile, navigate, profileLoading]);
 
   return (
     <div style={{ padding: "30px" }}>
       <h1>Pazar Muhasebe Paneli</h1>
 
-      {userData && (
+      {currentUserProfile && (
         <div>
-          <p>Hoş geldin: {userData.name}</p>
-          <p>Rol: {userData.role}</p>
-          <p>Yetki: {userData.storeId || "Tüm firmalar"}</p>
+          {currentUserProfile.name && <p>Hoş geldin: {currentUserProfile.name}</p>}
+          <p>Role: {currentUserProfile.role}</p>
+          <p>Store: {currentUserProfile.storeId || "all"}</p>
         </div>
       )}
 
