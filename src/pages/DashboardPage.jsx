@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "../firebase";
+import { getStoresForUser } from "../services/storeService";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
+  const [stores, setStores] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -14,23 +18,42 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const currentUser = auth.currentUser;
+    const fetchDashboardData = async () => {
+      setIsLoading(true);
+      setError("");
 
-      if (!currentUser) {
-        navigate("/");
-        return;
-      }
+      try {
+        const currentUser = auth.currentUser;
 
-      const userRef = doc(db, "users", currentUser.uid);
-      const userSnap = await getDoc(userRef);
+        if (!currentUser) {
+          navigate("/");
+          return;
+        }
 
-      if (userSnap.exists()) {
-        setUserData(userSnap.data());
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          setError("Kullanıcı bilgileri bulunamadı.");
+          setUserData(null);
+          setStores([]);
+          return;
+        }
+
+        const currentUserData = userSnap.data();
+        const userStores = await getStoresForUser(currentUserData);
+
+        setUserData(currentUserData);
+        setStores(userStores);
+      } catch {
+        setError("Dashboard verileri yüklenirken bir hata oluştu.");
+        setStores([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchDashboardData();
   }, [navigate]);
 
   return (
@@ -41,7 +64,7 @@ export default function DashboardPage() {
         <div>
           <p>Hoş geldin: {userData.name}</p>
           <p>Rol: {userData.role}</p>
-          <p>Yetki: {userData.storeId}</p>
+          <p>Yetki: {userData.storeId || "Tüm firmalar"}</p>
         </div>
       )}
 
@@ -51,15 +74,25 @@ export default function DashboardPage() {
 
       <h2>Firma Seçiniz</h2>
 
-      <button>Koç Home Concept</button>
-      <br />
-      <br />
+      {isLoading && <p>Firmalar yükleniyor...</p>}
 
-      <button>Pazar Yeri</button>
-      <br />
-      <br />
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <button>Withithalat</button>
+      {!isLoading && !error && stores.length === 0 && (
+        <p>Görüntülenecek aktif firma bulunamadı.</p>
+      )}
+
+      {!isLoading && !error && stores.length > 0 && (
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {stores.map((store) => (
+            <li key={store.id} style={{ marginBottom: "12px" }}>
+              <button type="button">
+                {store.name || store.title || store.companyName || store.id}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

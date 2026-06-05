@@ -17,7 +17,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
-    } catch (err) {
+    } catch {
       setError("E-mail veya şifre hatalı.");
     }
   };
